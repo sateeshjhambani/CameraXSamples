@@ -64,6 +64,8 @@ dependencies {
     debugImplementation("androidx.compose.ui:ui-tooling")
     debugImplementation("androidx.compose.ui:ui-test-manifest")
 
+    implementation("androidx.compose.material:material-icons-extended:1.5.1")
+
     val cameraxVersion = "1.3.0-rc01"
 
     implementation("androidx.camera:camera-core:$cameraxVersion")

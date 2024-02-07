@@ -1,26 +1,39 @@
 package com.sateeshjh.cameraxsamples
 
+import android.Manifest
+import android.graphics.Bitmap
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
-import com.sateeshjh.cameraxsamples.ui.theme.CameraXSamplesTheme
-import android.Manifest
+import androidx.camera.core.CameraSelector
+import androidx.camera.core.ImageCapture.OnImageCapturedCallback
+import androidx.camera.core.ImageCaptureException
+import androidx.camera.core.ImageProxy
 import androidx.camera.view.CameraController
 import androidx.camera.view.LifecycleCameraController
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Cameraswitch
+import androidx.compose.material.icons.filled.Photo
+import androidx.compose.material.icons.filled.PhotoCamera
 import androidx.compose.material3.BottomSheetScaffold
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.rememberBottomSheetScaffoldState
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
+import com.sateeshjh.cameraxsamples.ui.theme.CameraXSamplesTheme
 
 class MainActivity: ComponentActivity() {
 
@@ -58,6 +71,52 @@ class MainActivity: ComponentActivity() {
                             modifier = Modifier
                                 .fillMaxSize()
                         )
+
+                        IconButton(
+                            onClick = {
+                                controller.cameraSelector = if (controller.cameraSelector == CameraSelector.DEFAULT_BACK_CAMERA) {
+                                    CameraSelector.DEFAULT_FRONT_CAMERA
+                                } else CameraSelector.DEFAULT_BACK_CAMERA
+                            },
+                            modifier = Modifier
+                                .offset(16.dp, 16.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Cameraswitch,
+                                contentDescription = "Switch camera"
+                            )
+                        }
+
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .align(Alignment.BottomCenter)
+                                .padding(16.dp),
+                            horizontalArrangement = Arrangement.SpaceAround
+                        ) {
+                            IconButton(
+                                onClick = {
+
+                                },
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Photo,
+                                    contentDescription = "Open gallery"
+                                )
+                            }
+                            IconButton(
+                                onClick = {
+                                    takePhoto(controller) {
+
+                                    }
+                                },
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.PhotoCamera,
+                                    contentDescription = "Take photo"
+                                )
+                            }
+                        }
                     }
                 }
             }
@@ -66,11 +125,33 @@ class MainActivity: ComponentActivity() {
 
     private fun hasRequiredPermissions(): Boolean {
         return CAMERAX_PERMISSIONS.all {
-            androidx.core.content.ContextCompat.checkSelfPermission(
+            ContextCompat.checkSelfPermission(
                 applicationContext,
                 it
             ) == android.content.pm.PackageManager.PERMISSION_GRANTED
         }
+    }
+
+    private fun takePhoto(
+        controller: LifecycleCameraController,
+        onPhotoTaken: (Bitmap) -> Unit
+    ) {
+        controller.takePicture(
+            ContextCompat.getMainExecutor(applicationContext),
+            object: OnImageCapturedCallback() {
+                override fun onCaptureSuccess(image: ImageProxy) {
+                    super.onCaptureSuccess(image)
+
+                    onPhotoTaken(image.toBitmap())
+                }
+
+                override fun onError(exception: ImageCaptureException) {
+                    super.onError(exception)
+
+                    Log.e("Camera", "Unable to take a photo: ", exception)
+                }
+            }
+        )
     }
 
     companion object {
