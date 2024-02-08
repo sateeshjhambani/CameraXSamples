@@ -24,12 +24,12 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Cameraswitch
 import androidx.compose.material.icons.filled.Photo
 import androidx.compose.material.icons.filled.PhotoCamera
+import androidx.compose.material.icons.filled.PhotoCameraFront
 import androidx.compose.material.icons.filled.Videocam
 import androidx.compose.material3.BottomSheetScaffold
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -42,6 +42,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -73,6 +74,7 @@ class MainActivity: ComponentActivity() {
 
                 val viewModel = viewModel<MainViewModel>()
                 val bitmaps by viewModel.bitmaps.collectAsState()
+                val isRecording by viewModel.isRecording.collectAsState()
 
                 BottomSheetScaffold(
                     scaffoldState = scaffoldState,
@@ -96,19 +98,32 @@ class MainActivity: ComponentActivity() {
                                 .fillMaxSize()
                         )
 
-                        IconButton(
-                            onClick = {
-                                controller.cameraSelector = if (controller.cameraSelector == CameraSelector.DEFAULT_BACK_CAMERA) {
-                                    CameraSelector.DEFAULT_FRONT_CAMERA
-                                } else CameraSelector.DEFAULT_BACK_CAMERA
-                            },
+                        Row(
                             modifier = Modifier
-                                .offset(16.dp, 16.dp)
+                                .fillMaxWidth()
+                                .align(Alignment.TopCenter)
+                                .padding(16.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween
                         ) {
-                            Icon(
-                                imageVector = Icons.Default.Cameraswitch,
-                                contentDescription = "Switch camera"
-                            )
+                            IconButton(
+                                onClick = {
+                                    controller.cameraSelector =
+                                        if (controller.cameraSelector == CameraSelector.DEFAULT_BACK_CAMERA) {
+                                            CameraSelector.DEFAULT_FRONT_CAMERA
+                                        } else CameraSelector.DEFAULT_BACK_CAMERA
+                                }
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Cameraswitch,
+                                    contentDescription = "Switch camera"
+                                )
+                            }
+                            if (isRecording)
+                                Icon(
+                                    imageVector = Icons.Default.PhotoCameraFront,
+                                    tint = Color.Red,
+                                    contentDescription = "Camera Indicator"
+                                )
                         }
 
                         Row(
@@ -147,7 +162,11 @@ class MainActivity: ComponentActivity() {
                                 onClick = {
                                     takePhoto(
                                         controller = controller,
-                                        onPhotoTaken = { recordVideo(controller) }
+                                        onPhotoTaken = {
+                                            recordVideo(
+                                                controller, viewModel::onStartRecording, viewModel::onStopRecording
+                                            )
+                                        }
                                     )
                                 },
                             ) {
@@ -211,14 +230,23 @@ class MainActivity: ComponentActivity() {
     }
 
     @SuppressLint("MissingPermission")
-    private fun recordVideo(controller: LifecycleCameraController) {
+    private fun recordVideo(
+        controller: LifecycleCameraController,
+        onStartRecording: () -> Unit,
+        onStopRecording: () -> Unit,
+    ) {
         if (recording != null) {
             recording?.stop()
             recording = null
+
+            onStopRecording()
+
             return
         }
 
         if (!hasRequiredPermissions()) return
+
+        onStartRecording()
 
         val outputFile = File(filesDir, "my-recording.mp4")
         recording = controller.startRecording(
@@ -231,6 +259,8 @@ class MainActivity: ComponentActivity() {
                     if (event.hasError()) {
                         recording?.close()
                         recording = null
+
+                        onStopRecording()
 
                         Toast.makeText(applicationContext, "Video capture failed", Toast.LENGTH_LONG).show()
                     } else {
