@@ -4,6 +4,8 @@ A sample app that outlines the capture image and capture video use cases of the 
 
 We use the CameraX's LifecycleCameraController class (which provides most of the API's functionality) to capture photos and videos.
 
+<img width="1569" alt="CameraXSample" src="https://github.com/sateeshjhambani/CameraXSamples/assets/60574717/336001f4-93fc-4f25-ba4d-d2b958ee1a2a">
+
 ## Usage
 
 The method responsible for capturing a still image.
