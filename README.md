@@ -97,4 +97,4 @@ private fun recordVideo(
 
 ### References
 
-[CameraX Documentation] (https://developer.android.com/media/camera/camerax)
+[CameraX Documentation](https://developer.android.com/media/camera/camerax)
